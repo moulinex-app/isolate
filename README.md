@@ -13,7 +13,7 @@ To compile and install **isolate-lib** you will need the following dependencies 
 + GNU Libtool
 + cap
 
-Get the latest release tarball [here](https://github.com/Moulinex/isolate/releases/latest) and install using the following command :
+Get the latest release tarball [here](https://github.com/moulinex-app/isolate/releases/latest) and install using the following command :
 
 ```
 ./configure && make install
