@@ -1,4 +1,4 @@
-AC_INIT([isolate], [v1.8.1], [simon.scatton@outlook.fr])
+AC_INIT([isolate-lib], [v1.8.1], [simon.scatton@outlook.fr])
 
 AC_CONFIG_SRCDIR([src/])
 
