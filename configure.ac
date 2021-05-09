@@ -16,11 +16,12 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AM_PROG_AR
 
+AC_USE_SYSTEM_EXTENSIONS
+
 AC_CONFIG_MACRO_DIRS([m4])
 
 LT_PREREQ([2.2])
 LT_INIT([dlopen shared])
-
 
 AC_ARG_ENABLE([debug], AS_HELP_STRING([--enable-debug], [enable debug build]), [], [])
 AS_IF([test "$enable_debug" = "yes"], [

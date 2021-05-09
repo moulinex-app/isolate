@@ -1,6 +1,6 @@
 SUBDIRS = include .
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/  -include $(top_srcdir)/include/config.h -D_GNU_SOURCE -DCONFIG_FILE="\"default.cf\""
+AM_CPPFLAGS = -I$(top_srcdir)/src/  -include $(top_srcdir)/include/config.h -DCONFIG_FILE="\"default.cf\""
 
 
 AM_LDFLAGS = -shared -O3 -lcap
