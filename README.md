@@ -1,29 +1,30 @@
-isolate
-=======
+# isolate-lib
 
-Isolate is a sandbox built to safely run untrusted executables,
-offering them a limited-access environment and preventing them from
-affecting the host system. It takes advantage of features specific to
-the Linux kernel, like namespaces and control groups.
+This fork of **isolate** is a dynamic library based on the work of Martin Mareš (<mj@ucw.cz>) and Bernard Blackham
+(<bernard@blackham.com.au>) on [isolate](https://github.com/ioi/isolate), it exposes API bindings for the Rust crate
+that is made for Moulinex. See the original repository for the CLI.
 
-Isolate was developed by Martin Mareš (<mj@ucw.cz>) and Bernard Blackham
-(<bernard@blackham.com.au>), who still maintain it. Several other people
-contributed patches for features and bug fixes (see Git history for a list).
-Thanks!
 
-Originally, Isolate was a part of the [Moe Contest Environment](http://www.ucw.cz/moe/),
-but it evolved to a separate project used by different
-contest systems, most prominently [CMS](https://github.com/cms-dev/cms).
-It now lives at [GitHub](https://github.com/ioi/isolate),
-where you can submit bug reports and feature requests.
+# Install
 
-If you are interested in more details, please read Martin's
-and Bernard's [paper](http://mj.ucw.cz/papers/isolate.pdf) presented
-at the IOI Conference. Also, Isolate's [manual page](http://www.ucw.cz/moe/isolate.1.html)
-is available online.
+To compile and install **isolate-lib** you will need the following dependencies :
 
-To compile Isolate, you need the headers for the libcap library
-(usually available in a libcap-dev package).
++ gcc (or any other C compiler supporting C99 and GNU Extensions)
++ GNU Libtool
++ cap
 
-You may need `a2x` (found in [AsciiDoc](http://www.methods.co.nz/asciidoc/a2x.1.html)) for building manual.
-But if you only want the isolate binary, you can just run `make isolate`
+Get the latest release tarball [here](https://github.com/Moulinex/isolate/releases/latest) and install using the following command :
+
+```
+./configure && make install
+```
+
+The default install directory is ``/usr/local/`` but can be overriden using ``--prefix=dir`` with the ``configure`` script.
+
+For **Arch Linux** users the default install directory should be ``/usr/`` for instance.
+
+# Developers build
+
+If you want to build the project as a developer you will need **GNU Autotools**.
+
+Clone the ``dev`` branch of the git and run the ``./bootstrap`` script to configure the project for development.
