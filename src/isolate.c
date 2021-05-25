@@ -35,6 +35,63 @@
 #    define MS_REC (1 << 14)
 #endif
 
+typedef struct isolate_config
+{
+    char **argv;
+    // When multiple sandboxes are used in parallel, each must get a unique ID
+    int box_id;
+    // Change directory to <set_cwd> before executing the program
+    char *set_cwd;
+    // Enable use of control groups
+    int cg_enable;
+    // Do not add default directory rules
+    int default_dirs;
+    // Inherit full environment of the parent process
+    int pass_environ;
+    // Max size (in KB) of files that can be created
+    int fsize_limit;
+    // Limit stack size to <stack_limit> KB (default: 0=unlimited)
+    int stack_limit;
+    // Redirect stdin to <redir_strin>
+    char *redir_stdin;
+    // Redirect stdin to <redir_strout>
+    char *redir_stdout;
+    // Limit address space to <memory_limit> KB
+    int memory_limit;
+    // Output process information to <meta>
+    char *meta;
+    // Enable multiple processes (at most <max> of them); needs --cg
+    int max_processes;
+    // Set disk quota to <blk> blocks and <ino> inodes
+    int blk;
+    int ino;
+    // Redirect stderr to <redir_stderr>
+    char *redir_stderr;
+    // Redirect stderr to stdout
+    int redir_stderr_stdout;
+    // Do not print status messages except for fatal errors
+    int silent;
+    // Set run time limit (seconds, fractions allowed)
+    int timeout;
+    // Be verbose (use multiple times for even more verbosity)
+    int verbose;
+    // Set wall clock time limit (seconds, fractions allowed)
+    int wall_timeout;
+    // Set extra timeout, before which a timing-out program is not yet killed
+    // so that its real execution time is reported (seconds, fractions allowed)
+    int extra_timeout;
+    // Limit memory usage of the control group to <size> KB
+    int cg_memory_limit;
+    // Time limits affects total run time of the control
+    int cg_timing;
+    // Share network namespace with the parent process
+    int share_net;
+    // Inherit all file descriptors of the parent process
+    int inherit_fds;
+} isolate_config;
+
+int setup(isolate_config config);
+
 /*
  * Theory of operation
  *
@@ -63,6 +120,7 @@
 
 #define TIMER_INTERVAL_US 100000
 
+static int already_configured = 0;
 static int timeout; /* milliseconds */
 static int wall_timeout;
 static int extra_timeout;
@@ -536,7 +594,7 @@ static void box_keeper(void)
                         total_ms / 1000, total_ms % 1000, wall_ms / 1000,
                         wall_ms % 1000);
             }
-            box_exit(0);
+            return;
         }
         else if (WIFSIGNALED(stat))
         {
@@ -736,8 +794,10 @@ static const char *self_name(void)
     return cg_enable ? "isolate --cg" : "isolate";
 }
 
-static void init(void)
+void init(isolate_config config)
 {
+    if(!already_configured)
+        setup(config);
     msg("Preparing sandbox directory\n");
     if (mkdir("box", 0700) < 0)
     {
@@ -755,8 +815,10 @@ static void init(void)
     puts(box_dir);
 }
 
-static void cleanup(void)
+void cleanup(isolate_config config)
 {
+    if(!already_configured)
+        setup(config);
     if (!dir_exists("box"))
     {
         msg("Nothing to do -- box directory did not exist\n");
@@ -815,8 +877,10 @@ static void find_box_pid(void)
     fclose(f);
 }
 
-static void run(char **argv)
+void run(char **argv, isolate_config config)
 {
+    if(!already_configured)
+        setup(config);
     if (!dir_exists("box"))
         die("Box directory not found, did you run `%s --init'?", self_name());
 
@@ -854,279 +918,65 @@ static void run(char **argv)
     box_keeper();
 }
 
-static void show_version(void)
-{}
-
-/*** Options ***/
-
-static void __attribute__((format(printf, 1, 2))) usage(const char *msg, ...)
-{
-    if (msg != NULL)
-    {
-        va_list args;
-        va_start(args, msg);
-        vfprintf(stderr, msg, args);
-        va_end(args);
-    }
-    printf("\
-Usage: isolate [<options>] <command>\n\
-\n\
-Options:\n\
--b, --box-id=<id>\tWhen multiple sandboxes are used in parallel, each must get a unique ID\n\
-    --cg\t\tEnable use of control groups\n\
-    --cg-mem=<size>\tLimit memory usage of the control group to <size> KB\n\
-    --cg-timing\t\tTime limits affects total run time of the control group\n\
-\t\t\t(this is turned on by default, use --no-cg-timing to turn off)\n\
--c, --chdir=<dir>\tChange directory to <dir> before executing the program\n\
--d, --dir=<dir>\t\tMake a directory <dir> visible inside the sandbox\n\
-    --dir=<in>=<out>\tMake a directory <out> outside visible as <in> inside\n\
-    --dir=<in>=\t\tDelete a previously defined directory rule (even a default one)\n\
-    --dir=...:<opt>\tSpecify options for a rule:\n\
-\t\t\t\tdev\tAllow access to special files\n\
-\t\t\t\tfs\tMount a filesystem (e.g., --dir=/proc:proc:fs)\n\
-\t\t\t\tmaybe\tSkip the rule if <out> does not exist\n\
-\t\t\t\tnoexec\tDo not allow execution of binaries\n\
-\t\t\t\trw\tAllow read-write access\n\
-\t\t\t\ttmp\tCreate as a temporary directory (implies rw)\n\
--D, --no-default-dirs\tDo not add default directory rules\n\
--f, --fsize=<size>\tMax size (in KB) of files that can be created\n\
--E, --env=<var>\t\tInherit the environment variable <var> from the parent process\n\
--E, --env=<var>=<val>\tSet the environment variable <var> to <val>; unset it if <var> is empty\n\
--x, --extra-time=<time>\tSet extra timeout, before which a timing-out program is not yet killed,\n\
-\t\t\tso that its real execution time is reported (seconds, fractions allowed)\n\
--e, --full-env\t\tInherit full environment of the parent process\n\
-    --inherit-fds\t\tInherit all file descriptors of the parent process\n\
--m, --mem=<size>\tLimit address space to <size> KB\n\
--M, --meta=<file>\tOutput process information to <file> (name:value)\n\
--q, --quota=<blk>,<ino>\tSet disk quota to <blk> blocks and <ino> inodes\n\
-    --share-net\t\tShare network namespace with the parent process\n\
--s, --silent\t\tDo not print status messages except for fatal errors\n\
--k, --stack=<size>\tLimit stack size to <size> KB (default: 0=unlimited)\n\
--r, --stderr=<file>\tRedirect stderr to <file>\n\
-    --stderr-to-stdout\tRedirect stderr to stdout\n\
--i, --stdin=<file>\tRedirect stdin from <file>\n\
--o, --stdout=<file>\tRedirect stdout to <file>\n\
--p, --processes[=<max>]\tEnable multiple processes (at most <max> of them); needs --cg\n\
--t, --time=<time>\tSet run time limit (seconds, fractions allowed)\n\
-    --tty-hack\t\tAllow interactive programs in the sandbox (see man for caveats)\n\
--v, --verbose\t\tBe verbose (use multiple times for even more verbosity)\n\
--w, --wall-time=<time>\tSet wall clock time limit (seconds, fractions allowed)\n\
-\n\
-Commands:\n\
-    --init\t\tInitialize sandbox (and its control group when --cg is used)\n\
-    --run -- <cmd> ...\tRun given command within sandbox\n\
-    --cleanup\t\tClean up sandbox\n\
-    --version\t\tDisplay program version and configuration\n\
-");
-    exit(2);
-}
-
-enum opt_code
-{
-    OPT_INIT = 256,
-    OPT_RUN,
-    OPT_CLEANUP,
-    OPT_VERSION,
-    OPT_CG,
-    OPT_CG_MEM,
-    OPT_CG_TIMING,
-    OPT_NO_CG_TIMING,
-    OPT_SHARE_NET,
-    OPT_INHERIT_FDS,
-    OPT_STDERR_TO_STDOUT,
-    OPT_TTY_HACK,
-};
-
-static const char short_opts[] = "b:c:d:DeE:f:i:k:m:M:o:p::q:r:st:vw:x:";
-
-static const struct option long_opts[] = {
-    { "box-id", 1, NULL, 'b' },
-    { "chdir", 1, NULL, 'c' },
-    { "cg", 0, NULL, OPT_CG },
-    { "cg-mem", 1, NULL, OPT_CG_MEM },
-    { "cg-timing", 0, NULL, OPT_CG_TIMING },
-    { "cleanup", 0, NULL, OPT_CLEANUP },
-    { "dir", 1, NULL, 'd' },
-    { "no-cg-timing", 0, NULL, OPT_NO_CG_TIMING },
-    { "no-default-dirs", 0, NULL, 'D' },
-    { "fsize", 1, NULL, 'f' },
-    { "env", 1, NULL, 'E' },
-    { "extra-time", 1, NULL, 'x' },
-    { "full-env", 0, NULL, 'e' },
-    { "inherit-fds", 0, NULL, OPT_INHERIT_FDS },
-    { "init", 0, NULL, OPT_INIT },
-    { "mem", 1, NULL, 'm' },
-    { "meta", 1, NULL, 'M' },
-    { "processes", 2, NULL, 'p' },
-    { "quota", 1, NULL, 'q' },
-    { "run", 0, NULL, OPT_RUN },
-    { "share-net", 0, NULL, OPT_SHARE_NET },
-    { "silent", 0, NULL, 's' },
-    { "stack", 1, NULL, 'k' },
-    { "stderr", 1, NULL, 'r' },
-    { "stderr-to-stdout", 0, NULL, OPT_STDERR_TO_STDOUT },
-    { "stdin", 1, NULL, 'i' },
-    { "stdout", 1, NULL, 'o' },
-    { "time", 1, NULL, 't' },
-    { "tty-hack", 0, NULL, OPT_TTY_HACK },
-    { "verbose", 0, NULL, 'v' },
-    { "version", 0, NULL, OPT_VERSION },
-    { "wall-time", 1, NULL, 'w' },
-    { NULL, 0, NULL, 0 }
-};
-
-static unsigned int opt_uint(char *val)
-{
-    char *end;
-    errno = 0;
-    unsigned long int x = strtoul(val, &end, 10);
-    if (errno || end == val || end && *end)
-        usage("Invalid numeric parameter: %s\n", val);
-    if ((unsigned long int)(unsigned int)x != x)
-        usage("Numeric parameter out of range: %s\n", val);
-    return x;
-}
-
-int main(int argc, char **argv)
+int setup(isolate_config config)
 {
     int c;
     int require_cg = 0;
     char *sep;
-    enum opt_code mode = 0;
 
     init_dir_rules();
 
-    while ((c = getopt_long(argc, argv, short_opts, long_opts, NULL)) >= 0)
-        switch (c)
-        {
-        case 'b':
-            box_id = opt_uint(optarg);
-            break;
-        case 'c':
-            set_cwd = optarg;
-            break;
-        case OPT_CG:
-            cg_enable = 1;
-            break;
-        case 'd':
-            if (!set_dir_action(optarg))
-                usage("Invalid directory rule specified: %s\n", optarg);
-            break;
-        case 'D':
-            default_dirs = 0;
-            break;
-        case 'e':
-            pass_environ = 1;
-            break;
-        case 'E':
-            if (!set_env_action(optarg))
-                usage("Invalid environment specified: %s\n", optarg);
-            break;
-        case 'f':
-            fsize_limit = opt_uint(optarg);
-            break;
-        case 'k':
-            stack_limit = opt_uint(optarg);
-            break;
-        case 'i':
-            redir_stdin = optarg;
-            break;
-        case 'm':
-            memory_limit = opt_uint(optarg);
-            break;
-        case 'M':
-            meta_open(optarg);
-            break;
-        case 'o':
-            redir_stdout = optarg;
-            break;
-        case 'p':
-            if (optarg)
-                max_processes = opt_uint(optarg);
-            else
-                max_processes = 0;
-            break;
-        case 'q':
-            optarg = xstrdup(optarg);
-            sep = strchr(optarg, ',');
-            if (!sep)
-                usage("Invalid quota specified: %s\n", optarg);
-            *sep = 0;
-            block_quota = opt_uint(optarg);
-            inode_quota = opt_uint(sep + 1);
-            break;
-        case 'r':
-            redir_stderr = optarg;
-            redir_stderr_to_stdout = 0;
-            break;
-        case 's':
-            silent++;
-            break;
-        case 't':
-            timeout = 1000 * atof(optarg);
-            break;
-        case 'v':
-            verbose++;
-            break;
-        case 'w':
-            wall_timeout = 1000 * atof(optarg);
-            break;
-        case 'x':
-            extra_timeout = 1000 * atof(optarg);
-            break;
-        case OPT_INIT:
-        case OPT_RUN:
-        case OPT_CLEANUP:
-        case OPT_VERSION:
-            if (!mode || (int)mode == c)
-                mode = c;
-            else
-                usage("Only one command is allowed.\n");
-            break;
-        case OPT_CG_MEM:
-            cg_memory_limit = opt_uint(optarg);
-            require_cg = 1;
-            break;
-        case OPT_CG_TIMING:
-            cg_timing = 1;
-            require_cg = 1;
-            break;
-        case OPT_NO_CG_TIMING:
-            cg_timing = 0;
-            require_cg = 1;
-            break;
-        case OPT_SHARE_NET:
-            share_net = 1;
-            break;
-        case OPT_INHERIT_FDS:
-            inherit_fds = 1;
-            break;
-        case OPT_STDERR_TO_STDOUT:
-            redir_stderr = NULL;
-            redir_stderr_to_stdout = 1;
-            break;
-        case OPT_TTY_HACK:
-            tty_hack = 1;
-            break;
-        default:
-            usage(NULL);
-        }
-
-    if (!mode)
-        usage("Please specify an isolate command (e.g. --init, --run).\n");
-    if (mode == OPT_VERSION)
-    {
-        show_version();
-        return 0;
-    }
-
-    if (require_cg && !cg_enable)
-        usage("Options related to control groups require --cg to be set.\n");
+    if (config.box_id)
+        box_id = config.box_id;
+    if (config.set_cwd)
+        set_cwd = config.set_cwd;
+    if (config.cg_enable)
+        cg_enable = config.cg_enable;
+    if (config.default_dirs)
+        default_dirs = config.default_dirs;
+    // TODO Configure the directories options
+    if (config.pass_environ)
+        pass_environ = config.pass_environ;
+    if (config.fsize_limit)
+        fsize_limit = config.fsize_limit;
+    // TODO Patch environnement variables with
+    //! set_env_action(optarg)
+    if (config.stack_limit)
+        stack_limit = config.stack_limit;
+    if (config.redir_stdin)
+        redir_stdin = config.redir_stdin;
+    if (config.memory_limit)
+        memory_limit = config.memory_limit;
+    if (config.meta)
+        meta_open(config.meta);
+    if (config.redir_stdout)
+        redir_stdout = config.redir_stdout;
+    if (config.max_processes)
+        max_processes = config.max_processes;
+    if (config.blk)
+        block_quota = config.blk;
+    if (config.ino)
+        inode_quota = config.ino;
+    if (config.redir_stderr)
+        redir_stderr = config.redir_stderr;
+    redir_stderr_to_stdout = config.redir_stderr_stdout;
+    silent = config.silent;
+    timeout = 1000 * config.timeout;
+    verbose = config.verbose;
+    wall_timeout = 1000 * config.wall_timeout;
+    extra_timeout = 1000 * config.extra_timeout;
+    cg_memory_limit = config.cg_memory_limit;
+    cg_timing = config.cg_timing;
+    if (cg_memory_limit || require_cg || cg_timing)
+        require_cg = 1;
+    share_net = config.share_net;
+    inherit_fds = config.inherit_fds;
 
     if (geteuid())
         die("Must be started as root");
     if (getegid() && setegid(0) < 0)
         die("Cannot switch to root group: %m");
+
     orig_uid = getuid();
     orig_gid = getgid();
 
@@ -1134,26 +984,5 @@ int main(int argc, char **argv)
     cf_parse();
     box_init();
     cg_init();
-
-    switch (mode)
-    {
-    case OPT_INIT:
-        if (optind < argc)
-            usage("--init mode takes no parameters\n");
-        init();
-        break;
-    case OPT_RUN:
-        if (optind >= argc)
-            usage("--run mode requires a command to run\n");
-        run(argv + optind);
-        break;
-    case OPT_CLEANUP:
-        if (optind < argc)
-            usage("--cleanup mode takes no parameters\n");
-        cleanup();
-        break;
-    default:
-        die("Internal error: mode mismatch");
-    }
-    exit(0);
+    already_configured = 1;
 }
