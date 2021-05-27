@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: isolate
+Description: The isolate library
+Version: 1.0.0
+Cflags: -I${includedir}/isolate
+Libs: -L${libdir} -lisolate

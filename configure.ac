@@ -7,7 +7,8 @@ AM_INIT_AUTOMAKE([
   -Werror
   foreign
   subdir-objects
-])
+]
+)
 
 AM_SILENT_RULES([yes])
 
@@ -32,6 +33,6 @@ AH_TEMPLATE([DEBUG],
             [Define to 1 if debug is enabled, 0 otherwise])
 
 AC_CONFIG_HEADERS([include/config.h])
-AC_CONFIG_FILES([Makefile include/Makefile])
+AC_CONFIG_FILES([Makefile include/Makefile isolate.pc])
 # Output the files
 AC_OUTPUT
