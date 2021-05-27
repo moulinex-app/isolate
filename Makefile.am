@@ -24,7 +24,7 @@ source_files = \
 	src/isolate.h \
 	src/util.c
 
-header_fi
+header_files = \
 	src/isolate.h
 
 libisolate_la_LDFLAGS = -lcap
