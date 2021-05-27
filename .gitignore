@@ -18,6 +18,10 @@ compile_commands.json
 *.log
 *.trs
 
+#Package config generated files
+
+*.pc
+
 #Weird tmp files
 *~
 

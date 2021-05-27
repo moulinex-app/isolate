@@ -1,6 +1,12 @@
 SUBDIRS = include .
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/  -include $(top_srcdir)/include/config.h -DCONFIG_FILE="\"default.cf\""
+if DEBUG
+CONFIG_FILE=isolate.cf
+else !DEBUG
+CONFIG_FILE=@prefix@/etc/isolate.cf
+endif
+
+AM_CPPFLAGS = -I$(top_srcdir)/src/  -include $(top_srcdir)/include/config.h -DCONFIG_FILE=\"$(CONFIG_FILE)\"
 
 
 AM_LDFLAGS = -shared -O3 -lcap
@@ -18,7 +24,7 @@ source_files = \
 	src/isolate.h \
 	src/util.c
 
-header_files = \
+header_fi
 	src/isolate.h
 
 libisolate_la_LDFLAGS = -lcap
@@ -27,3 +33,4 @@ libisolate_la_SOURCES = $(source_files) $(header_files)
 
 install-exec-hook:
 	cp $(top_srcdir)/isolate.pc @libdir@/pkgconfig/isolate.pc
+	cp $(top_srcdir)/isolate.cf $(CONFIG_FILE)

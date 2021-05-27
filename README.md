@@ -16,12 +16,18 @@ To compile and install **isolate-lib** you will need the following dependencies 
 Get the latest release tarball [here](https://github.com/moulinex-app/isolate/releases/latest) and install using the following command :
 
 ```
-./configure && make install
+./configure
 ```
 
-The default install directory is ``/usr/local/`` but can be overriden using ``--prefix=dir`` with the ``configure`` script.
+Once the configuration is done you can modify the configuration file ``isolate.cf`` of the library. And then proceed to 
 
-For **Arch Linux** users the default install directory should be ``/usr/`` for instance.
+```
+make install
+```
+
+The configuration file will be install at ``$PREFIX/etc/isolate.cf`` where prefix is the install directory of the configure script.
+
+The default install directory is ``/usr/local/`` but can be overriden using ``--prefix=dir`` with the ``configure`` script.
 
 # Developers build
 
