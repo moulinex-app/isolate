@@ -21,6 +21,6 @@ build() {
 
 package() {
   cd $pkgname-v$pkgver
-  make DESTDIR="$pkgdir/usr" sysconfdir="$pkgdir/etc" libdir="$pkgdir/lib" install
+  make DESTDIR="$pkgdir/usr" sysconfdir="$pkgdir/etc" install
   chmod o-x $pkgdir/usr/bin/isolate
 }

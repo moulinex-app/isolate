@@ -32,5 +32,5 @@ libisolate_la_LDFLAGS = -lcap
 libisolate_la_SOURCES = $(source_files) $(header_files)
 
 install-exec-hook:
-	cp $(top_srcdir)/isolate.pc @libdir@/pkgconfig/isolate.pc
 	cp $(top_srcdir)/isolate.cf $(CONFIG_FILE)
+# cp $(top_srcdir)/isolate.pc @libdir@/pkgconfig/isolate.pc
