@@ -8,19 +8,18 @@ arch=('i686' 'x86_64')
 url="https://github.com/moulinex-app/isolate"
 license=('GPL2')
 depends=()
-makedepends=('git' 'gcc' 'asciidoc')
+makedepends=('git' 'gcc' 'libcap')
 provides=('isolate-lib')
 conflicts=('isolate' 'isolate-git')
 install=$pkgname.install
-source=("https://github.com/moulinex-app/isolate/releases/download/v$pkgver/isolate-lib-v$pkgver.tar.gz")
-
+source=("file://$pkgname-v$pkgver.tar.gz")
+sha512sums=("1d30a7da66aaf2c420cd007a3e78abbb66d6b12742659ce43a014985b20ef6b27149f4d62ef44108852af8a59adedef439ffbc2079a26407e58ab0f62615010f")
 build() {
   cd $pkgname-v$pkgver
-  ./configure --prefix="/usr" --sysconfdir="/etc"
+  ./configure --prefix="/usr"
 }
 
 package() {
   cd $pkgname-v$pkgver
-  make DESTDIR="$pkgdir/usr" topsrc_dir="$pkgdir" sysconfdir="$pkgdir/etc" install
-  chmod o-x $pkgdir/usr/bin/isolate
+  make DESTDIR="$pkgdir" install
 }

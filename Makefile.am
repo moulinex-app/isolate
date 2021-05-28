@@ -6,6 +6,9 @@ else !DEBUG
 CONFIG_FILE=$(sysconfdir)/isolate.cf
 endif
 
+libisolateconfdir=$(sysconfdir)
+libisolateconf_DATA = isolate.cf
+
 AM_CPPFLAGS = -I$(top_srcdir)/src/  -include $(top_srcdir)/include/config.h -DCONFIG_FILE=\"$(CONFIG_FILE)\"
 
 
@@ -28,9 +31,4 @@ header_files = \
 	src/isolate.h
 
 libisolate_la_LDFLAGS = -lcap
-
 libisolate_la_SOURCES = $(source_files) $(header_files)
-
-install-exec-hook:
-	cp $(top_srcdir)/isolate.cf $(CONFIG_FILE)
-# cp $(top_srcdir)/isolate.pc @libdir@/pkgconfig/isolate.pc
