@@ -3,7 +3,7 @@ SUBDIRS = include .
 if DEBUG
 CONFIG_FILE=isolate.cf
 else !DEBUG
-CONFIG_FILE=@prefix@/etc/isolate.cf
+CONFIG_FILE=$(sysconfdir)/isolate.cf
 endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/  -include $(top_srcdir)/include/config.h -DCONFIG_FILE=\"$(CONFIG_FILE)\"
