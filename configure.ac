@@ -39,6 +39,6 @@ AM_CONDITIONAL([DEBUG], [test "$enable_debug" = "yes"])
 
 
 AC_CONFIG_HEADERS([include/config.h])
-AC_CONFIG_FILES([Makefile include/Makefile isolate.pc])
+AC_CONFIG_FILES([Makefile include/Makefile isolate.pc isolate.cf])
 # Output the files
 AC_OUTPUT
