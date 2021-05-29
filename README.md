@@ -7,6 +7,12 @@ that is made for Moulinex. See the original repository for the CLI.
 
 # Install
 
+## Arch Linux users
+
+The isolate library can be installed via the (AUR)[https://aur.archlinux.org/packages/isolate-lib/] using a AUR builder such as ``yay``
+
+## Install from source
+
 To compile and install **isolate-lib** you will need the following dependencies :
 
 + gcc (or any other C compiler supporting C99 and GNU Extensions)
