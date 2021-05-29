@@ -9,7 +9,7 @@ that is made for Moulinex. See the original repository for the CLI.
 
 ## Arch Linux users
 
-The isolate library can be installed via the [AUR](https://aur.archlinux.org/packages/isolate-lib/) using a AUR builder such as ``yay``
+The isolate library can be installed via the [AUR](https://aur.archlinux.org/packages/isolate-lib/) package ``isolate-lib`` using a AUR builder such as ``yay``
 
 ## Install from source
 
